@@ -2,33 +2,20 @@ package main
 
 import (
 	"context"
+	"math/rand"
 	"time"
 
 	"github.com/gdamore/tcell"
 )
 
-type direction int
-
-const (
-	up direction = iota
-	right
-	down
-	left
-)
+// ごちゃごちゃしているので整理しましょう
 
 var sc tcell.Screen
 
-func main() {
-	maxX, maxY = 12, 21
-	startP.x, startP.y = 5, 0
+var keyCh chan tcell.Key
 
-	field = func() [][]bool {
-		ret := make([][]bool, maxY)
-		for i := range ret {
-			ret[i] = make([]bool, maxX)
-		}
-		return ret
-	}()
+func main() {
+	rand.Seed(time.Now().UnixNano())
 
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
 	sc, _ = tcell.NewScreen()
@@ -37,32 +24,46 @@ func main() {
 	sc.SetStyle(tcell.StyleDefault)
 	sc.Clear()
 
-	game()
+	ctx, cancel := context.WithCancel(context.Background())
+	gameInit(ctx, cancel)
+	game(ctx)
 }
 
-func game() {
-	ctx, cancel := context.WithCancel(context.Background())
-	dch := make(chan direction)
-
-	screenInit()
-
-	go poll(ctx, cancel, dch)
-	go fall(ctx, dch)
-
-LOOP:
-	for p := startP; ; {
+func game(ctx context.Context) {
+	mino := newMino()
+	mino.draw(tcell.ColorWhite)
+	for {
+		sc.Show()
 		select {
 		case <-ctx.Done():
-			break LOOP
-		case d := <-dch:
-			p = move(p, d)
+			return
+		case k := <-keyCh:
+			mino.move(k)
 		}
-
-		sc.Show()
 	}
 }
 
-func poll(ctx context.Context, cancel context.CancelFunc, dch chan direction) {
+func gameInit(ctx context.Context, cancel context.CancelFunc) {
+	maxP = point{21, 12}
+	startP = point{0, 5}
+
+	field = func() [][]bool {
+		ret := make([][]bool, maxP.y)
+		for i := range ret {
+			ret[i] = make([]bool, maxP.x)
+		}
+		return ret
+	}()
+
+	keyCh = make(chan tcell.Key)
+
+	go poll(ctx, cancel)
+	go fall(ctx)
+
+	drawWall()
+}
+
+func poll(ctx context.Context, cancel context.CancelFunc) {
 	for {
 		ev := sc.PollEvent()
 		switch ev := ev.(type) {
@@ -71,27 +72,21 @@ func poll(ctx context.Context, cancel context.CancelFunc, dch chan direction) {
 			case tcell.KeyEscape, tcell.KeyCtrlC:
 				cancel()
 				return
-			case tcell.KeyUp:
-				dch <- up
-			case tcell.KeyRight:
-				dch <- right
-			case tcell.KeyDown:
-				dch <- down
-			case tcell.KeyLeft:
-				dch <- left
+			default:
+				keyCh <- ev.Key()
 			}
 		}
 	}
 }
 
-func fall(ctx context.Context, dch chan direction) {
+func fall(ctx context.Context) {
 	for {
 		time.Sleep(time.Second)
 		select {
 		case <-ctx.Done():
 			return
 		default:
-			dch <- down
+			keyCh <- tcell.KeyDown
 		}
 	}
 }
