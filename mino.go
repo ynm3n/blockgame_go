@@ -8,13 +8,32 @@ import (
 
 type mino struct {
 	point
-	shape int
-	state int
+	shapeStatus int
+	spinStatus  int
 }
 
 func newMino() *mino {
 	m := &mino{startP, rand.Intn(7), 0}
 	return m
+}
+
+func (m *mino) shape() []point {
+	ps := make([]point, 4)
+	diffs := minoShapes[m.shapeStatus]
+	for i, d := range diffs {
+		switch m.spinStatus {
+		case 0:
+			// なにもしないよ！
+		case 1:
+			d.y, d.x = d.x, -d.y
+		case 2:
+			d.y, d.x = -d.y, -d.x
+		case 3:
+			d.y, d.x = -d.x, d.y
+		}
+		ps[i] = m.sum(d)
+	}
+	return ps
 }
 
 // 名前ださくね？
@@ -29,68 +48,32 @@ var minoShapes = [][]point{
 }
 
 func (m *mino) draw(c tcell.Color) {
-	ps := func() []point {
-		ret := make([]point, 4)
-		diffs := minoShapes[m.shape]
-		for i, d := range diffs {
-			switch m.state {
-			case 0:
-				// なにもしないよ！
-			case 1:
-				d.y, d.x = d.x, -d.y
-			case 2:
-				d.y, d.x = -d.y, -d.x
-			case 3:
-				d.y, d.x = -d.x, d.y
-			}
-			ret[i] = m.sum(d)
-		}
-		return ret
-	}()
-
-	ok := func() bool {
-		if c == tcell.ColorDefault {
-			return true
-		}
-
-		for _, p := range ps {
-			if p.field() {
-				return false
-			}
-		}
-		return true
-	}()
-
-	if ok {
-		for _, p := range ps {
-			drawSquare(c, p.y, p.x)
-		}
-	} else {
-		m.state--
-		if m.state < 0 {
-			m.state = 3
-		}
-		m.draw(c)
+	ps := m.shape()
+	for _, p := range ps {
+		drawSquare(c, p.y, p.x)
 	}
+}
+
+func (m *mino) clear() {
+	m.draw(tcell.ColorDefault)
 }
 
 func (m *mino) move(k tcell.Key) {
 	white := tcell.ColorWhite
-	def := tcell.ColorDefault
+	// now := tcell.ColorPaleGreen
 
-	m.draw(def)
+	m.clear()
 
 	switch k {
 	case tcell.KeyLeft, tcell.KeyRight, tcell.KeyDown:
 		m.add(direction[k])
+		if m.isCollided() {
+			m.sub(direction[k])
+		}
 	case tcell.KeyUp:
 		// 真下に着地する処理
 	case tcell.KeyEnter:
-		m.state = (m.state + 1) % 4
-	}
-
-	if m.isCollided() {
-		m.sub(direction[k])
+		m.spin()
 	}
 
 	if m.isLanding() {
@@ -101,9 +84,30 @@ func (m *mino) move(k tcell.Key) {
 	m.draw(white)
 }
 
+func (m *mino) spin() {
+	old := m.spinStatus
+	m.spinStatus = (m.spinStatus + 1) % 4
+
+	ps := m.shape()
+	ng := false
+	for _, p := range ps {
+		if p.x < 0 || p.x >= maxP.x {
+			ng = true
+		} else if p.y < 0 || p.y >= maxP.y {
+			ng = true
+		} else if p.field() {
+			ng = true
+		}
+	}
+
+	if ng {
+		m.spinStatus = old
+	}
+}
+
 func (m *mino) isCollided() bool {
-	for _, diff := range minoShapes[m.shape] {
-		p := m.sum(diff)
+	ps := m.shape()
+	for _, p := range ps {
 		if p.field() {
 			return true
 		}
@@ -112,9 +116,10 @@ func (m *mino) isCollided() bool {
 }
 
 func (m *mino) isLanding() bool {
-	for _, diff := range minoShapes[m.shape] {
-		p := m.sum(diff)
-		if field[p.y+1][p.x] {
+	ps := m.shape()
+	for _, p := range ps {
+		p.y++
+		if p.field() {
 			return true
 		}
 	}
