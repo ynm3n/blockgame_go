@@ -92,33 +92,14 @@ func (m *mino) move(k tcell.Key) {
 	m.draw(white)
 }
 
-func (m *mino) spin() {
-	old := m.spinStatus
-	m.spinStatus = (m.spinStatus + 1) % 4
-
-	ps := m.shape()
-	ng := false
-	for _, p := range ps {
-		if p.x < 0 || p.x >= maxP.x {
-			ng = true
-		} else if p.y < 0 || p.y >= maxP.y {
-			ng = true
-		} else if p.field() {
-			ng = true
-		} else if m.shapeStatus == 1 { // 正方形は回す必要なし
-			ng = true
-		}
-	}
-
-	if ng {
-		m.spinStatus = old
-	}
-}
-
 func (m *mino) isCollided() bool {
 	ps := m.shape()
 	for _, p := range ps {
-		if p.field() {
+		if p.x < 0 || p.x >= maxP.x {
+			return true
+		} else if p.y < 0 || p.y >= maxP.y {
+			return true
+		} else if p.field() {
 			return true
 		}
 	}
@@ -126,12 +107,24 @@ func (m *mino) isCollided() bool {
 }
 
 func (m *mino) isLanding() bool {
-	ps := m.shape()
-	for _, p := range ps {
-		p.y++
-		if p.field() {
-			return true
-		}
+	down := tcell.KeyDown
+	m.add(direction[down])
+	defer m.sub(direction[down])
+
+	return m.isCollided()
+}
+
+func (m *mino) spin() bool {
+	if m.shapeStatus == 1 { // 正方形は回す必要なし
+		return false
 	}
-	return false
+
+	old := m.spinStatus
+	m.spinStatus = (m.spinStatus + 1) % 4
+
+	if m.isCollided() {
+		m.spinStatus = old
+		return false
+	}
+	return true
 }
