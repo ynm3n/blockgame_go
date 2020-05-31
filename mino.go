@@ -13,7 +13,8 @@ type mino struct {
 }
 
 func newMino() *mino {
-	m := &mino{startP, rand.Intn(7), 0}
+	r := rand.Intn(7)
+	m := &mino{startP, r, 0}
 	return m
 }
 
@@ -71,7 +72,14 @@ func (m *mino) move(k tcell.Key) {
 			m.sub(direction[k])
 		}
 	case tcell.KeyUp:
-		// 真下に着地する処理
+		down := tcell.KeyDown
+		for {
+			m.add(direction[down])
+			if m.isCollided() {
+				m.sub(direction[down])
+				break
+			}
+		}
 	case tcell.KeyEnter:
 		m.spin()
 	}
@@ -96,6 +104,8 @@ func (m *mino) spin() {
 		} else if p.y < 0 || p.y >= maxP.y {
 			ng = true
 		} else if p.field() {
+			ng = true
+		} else if m.shapeStatus == 1 { // 正方形は回す必要なし
 			ng = true
 		}
 	}
