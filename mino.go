@@ -2,9 +2,12 @@ package main
 
 import (
 	"math/rand"
+	"sort"
 
 	"github.com/gdamore/tcell"
 )
+
+var favoriteColor = tcell.ColorPaleGreen
 
 type mino struct {
 	point
@@ -61,7 +64,6 @@ func (m *mino) clear() {
 
 func (m *mino) move(k tcell.Key) {
 	white := tcell.ColorWhite
-	// now := tcell.ColorPaleGreen
 
 	m.clear()
 
@@ -86,10 +88,11 @@ func (m *mino) move(k tcell.Key) {
 
 	if m.isLanding() {
 		m.draw(white)
+		m.clearLine()
 		new := newMino()
 		*m = *new
 	}
-	m.draw(white)
+	m.draw(favoriteColor)
 }
 
 func (m *mino) isCollided() bool {
@@ -127,4 +130,50 @@ func (m *mino) spin() bool {
 		return false
 	}
 	return true
+}
+
+func (m *mino) clearLine() {
+	ps := m.shape()
+	mp := make(map[int]bool)
+	for _, p := range ps {
+		mp[p.y] = true
+	}
+
+	ys := make([]int, 0, len(mp))
+	for y := range mp {
+		ys = append(ys, y)
+	}
+	sort.Ints(ys)
+
+	minY := 1
+	for _, y := range ys {
+		isFull := true
+		for x := 1; x <= maxP.x-2; x++ {
+			if !field[y][x] {
+				isFull = false
+				break
+			}
+		}
+
+		if isFull {
+			for y1 := y; y1 >= minY; y1-- {
+				end := true
+				for x := 1; x <= maxP.x-2; x++ {
+					if field[y1-1][x] {
+						drawSquare(tcell.ColorWhite, y1, x)
+						end = false
+					} else {
+						drawSquare(tcell.ColorDefault, y1, x)
+					}
+				}
+				if end {
+					minY = y1
+					break
+				}
+			}
+			for x := 1; x <= maxP.x-2; x++ {
+				drawSquare(tcell.ColorDefault, 0, x)
+			}
+		}
+	}
 }

@@ -31,7 +31,7 @@ func main() {
 
 func game(ctx context.Context) {
 	mino := newMino()
-	mino.draw(tcell.ColorWhite)
+	mino.draw(favoriteColor)
 	for {
 		sc.Show()
 		select {
