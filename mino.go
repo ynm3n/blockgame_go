@@ -7,8 +7,6 @@ import (
 	"github.com/gdamore/tcell"
 )
 
-var favoriteColor = tcell.ColorPaleGreen
-
 type mino struct {
 	point
 	shapeStatus int
@@ -16,7 +14,7 @@ type mino struct {
 }
 
 func newMino() *mino {
-	r := rand.Intn(7)
+	r := rand.Intn(len(minoShapes))
 	m := &mino{startP, r, 0}
 	return m
 }
@@ -62,7 +60,7 @@ func (m *mino) clear() {
 	m.draw(tcell.ColorDefault)
 }
 
-func (m *mino) move(k tcell.Key) {
+func (m *mino) move(k tcell.Key, c tcell.Color) {
 	white := tcell.ColorWhite
 
 	m.clear()
@@ -92,7 +90,7 @@ func (m *mino) move(k tcell.Key) {
 		new := newMino()
 		*m = *new
 	}
-	m.draw(favoriteColor)
+	m.draw(c)
 }
 
 func (m *mino) isCollided() bool {
@@ -119,7 +117,7 @@ func (m *mino) isLanding() bool {
 
 func (m *mino) spin() bool {
 	if m.shapeStatus == 1 { // 正方形は回す必要なし
-		return false
+		return true
 	}
 
 	old := m.spinStatus

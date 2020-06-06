@@ -33,7 +33,6 @@ var (
 )
 
 var direction = map[tcell.Key]point{
-	// tcell.KeyUp:    {-1, 0},
 	tcell.KeyRight: {0, 1},
 	tcell.KeyDown:  {1, 0},
 	tcell.KeyLeft:  {0, -1},

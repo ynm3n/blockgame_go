@@ -30,15 +30,17 @@ func main() {
 }
 
 func game(ctx context.Context) {
-	mino := newMino()
-	mino.draw(favoriteColor)
+	favColor := tcell.ColorPaleGreen
+	m := newMino()
+	m.draw(favColor)
+
 	for {
 		sc.Show()
 		select {
 		case <-ctx.Done():
 			return
 		case k := <-keyCh:
-			mino.move(k)
+			m.move(k, favColor)
 		}
 	}
 }
