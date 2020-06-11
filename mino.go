@@ -2,7 +2,6 @@ package main
 
 import (
 	"math/rand"
-	"sort"
 
 	"github.com/gdamore/tcell"
 )
@@ -86,7 +85,7 @@ func (m *mino) move(k tcell.Key, c tcell.Color) {
 
 	if m.isLanding() {
 		m.draw(white)
-		m.clearLine()
+		clearLine()
 		new := newMino()
 		*m = *new
 	}
@@ -130,48 +129,53 @@ func (m *mino) spin() bool {
 	return true
 }
 
-func (m *mino) clearLine() {
-	ps := m.shape()
-	mp := make(map[int]bool)
-	for _, p := range ps {
-		mp[p.y] = true
-	}
+// func (m *mino) clearLine() {
+// 	ps := m.shape()
+// 	ys := func() []int {
+// 		mp := make(map[int]bool)
+// 		for _, p := range ps {
+// 			mp[p.y] = true
+// 		}
+// 		ys := make([]int, 0, len(mp))
+// 		for y := range mp {
+// 			ys = append(ys, y)
+// 		}
+// 		return ys
+// 	}()
+// 	sort.Ints(ys)
 
-	ys := make([]int, 0, len(mp))
-	for y := range mp {
-		ys = append(ys, y)
-	}
-	sort.Ints(ys)
+// 	minY := 0
+// 	for _, y := range ys {
+// 		isFull := true
+// 		for x := 1; x <= maxP.x-2; x++ {
+// 			if !field[y][x] {
+// 				isFull = false
+// 				break
+// 			}
+// 		}
 
-	minY := 1
-	for _, y := range ys {
-		isFull := true
-		for x := 1; x <= maxP.x-2; x++ {
-			if !field[y][x] {
-				isFull = false
-				break
-			}
-		}
-
-		if isFull {
-			for y1 := y; y1 >= minY; y1-- {
-				end := true
-				for x := 1; x <= maxP.x-2; x++ {
-					if field[y1-1][x] {
-						drawSquare(tcell.ColorWhite, y1, x)
-						end = false
-					} else {
-						drawSquare(tcell.ColorDefault, y1, x)
-					}
-				}
-				if end {
-					minY = y1
-					break
-				}
-			}
-			for x := 1; x <= maxP.x-2; x++ {
-				drawSquare(tcell.ColorDefault, 0, x)
-			}
-		}
-	}
-}
+// 		if isFull {
+// 			for y1 := y; y1 >= minY; y1-- {
+// 				if y1 == 0 {
+// 					for x := 1; x <= maxP.x-2; x++ {
+// 						drawSquare(tcell.ColorDefault, y1, x)
+// 					}
+// 					break
+// 				}
+// 				end := true
+// 				for x := 1; x <= maxP.x-2; x++ {
+// 					if field[y1-1][x] {
+// 						drawSquare(tcell.ColorWhite, y1, x)
+// 						end = false
+// 					} else {
+// 						drawSquare(tcell.ColorDefault, y1, x)
+// 					}
+// 				}
+// 				if end {
+// 					minY = y1 + 1
+// 					break
+// 				}
+// 			}
+// 		}
+// 	}
+// }

@@ -61,3 +61,51 @@ func drawWall() {
 		drawSquare(white, maxP.y-1, x)
 	}
 }
+
+func clearLine() {
+	diffs := make([]int, maxP.y)
+	cnt := 0
+	minY := 0
+	for y := maxP.y - 2; y >= 0; y-- {
+		full := true
+		empty := true
+		for x := 1; x <= maxP.x-2; x++ {
+			if field[y][x] {
+				empty = false
+			} else {
+				full = false
+			}
+		}
+
+		if full {
+			diffs[y] = 0
+			cnt++
+		} else {
+			diffs[y] = cnt
+		}
+		if empty {
+			minY = y + 1
+			break
+		}
+	}
+
+	for y := maxP.y - 1; y >= minY; y-- {
+		d := diffs[y]
+		if d == 0 {
+			continue
+		}
+
+		for x := 1; x <= maxP.x-2; x++ {
+			if field[y][x] {
+				drawSquare(tcell.ColorWhite, y+d, x)
+			} else {
+				drawSquare(tcell.ColorDefault, y+d, x)
+			}
+		}
+	}
+	for y := minY; y < minY+cnt; y++ {
+		for x := 1; x <= maxP.x-2; x++ {
+			drawSquare(tcell.ColorDefault, y, x)
+		}
+	}
+}
